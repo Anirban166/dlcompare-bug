@@ -1,0 +1,26 @@
+name: dlcompare-test
+on: [push]
+jobs:
+  run:
+    runs-on: [ubuntu-latest]
+    container: docker://dvcorg/cml:latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@master
+
+      - name: Install dependencies
+        run: |
+          R -e 'install.packages("ggplot2")' 
+          R -e 'install.packages("directlabels")'        
+          
+      - name: Run my script and push results in markdown as a bot-comment
+        env: 
+          repo_token: ${{ secrets.GITHUB_TOKEN }} 
+        run: |
+          R -e 'source("R/test.R")'   
+          # Retrieve comparison plot and publish it within a markdown file (dlcompare output):
+          cml-publish result.png --md > report.md 
+          # Generate report:
+          cml-send-comment report.md   
